@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>whitebg</title>
+<meta name="description" content="Put product photos on a pure white background, on your phone, offline.">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="whitebg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--bg:#f6f7f8;--fg:#1d2126;--muted:#5d6670;--accent:#1f8a4c;--card:#fff;--line:#dde1e5}
+@media (prefers-color-scheme: dark){:root{--bg:#15181b;--fg:#eef0f2;--muted:#a3abb3;--card:#1f2327;--line:#30363c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 -apple-system,system-ui,Segoe UI,sans-serif;padding:16px;padding-top:max(16px,env(safe-area-inset-top))}
+main{max-width:640px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+p.sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+label.btn,button{display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:disabled{opacity:.45}
+input[type=file]{display:none}
+select{font-size:15px;padding:6px;border-radius:8px}
+#status{color:var(--muted);font-size:14px;min-height:20px;margin-top:10px;white-space:pre-line}
+img.out{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;display:block;margin-top:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1>whitebg</h1>
+<p class="sub">Product photo to pure white background. Runs on your device; nothing is uploaded.</p>
+<div class="card">
+  <div class="row">
+    <label class="btn" for="pick">Take or pick a photo</label>
+    <input id="pick" type="file" accept="image/*" capture="environment">
+    <select id="model" aria-label="Model">
+      <option value="u2netp">Fast (u2netp, 4.6 MB)</option>
+      <option value="isnet">Better edges (isnet int8, 46 MB)</option>
+    </select>
+  </div>
+  <div id="status">Ready.</div>
+</div>
+<div class="card" id="result" hidden>
+  <img class="out" id="outimg" alt="Result on white">
+  <div class="row" style="margin-top:12px">
+    <button id="share">Share / Save to Photos</button>
+    <button class="ghost" id="dl">Download JPEG</button>
+  </div>
+  <p class="note">Phone quality is lower than the desktop app. Check edges before listing.</p>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
