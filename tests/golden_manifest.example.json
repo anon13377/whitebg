@@ -1,0 +1,5 @@
+[
+ {"name": "example/item1", "raw": "C:/photos/raw/item1.jpg", "final": "C:/photos/approved/item1.jpg",
+  "config_from_log": "C:/photos/work/item1/final_v2/log.json"},
+ {"name": "example/item2", "raw": "C:/photos/raw/item2.jpg", "final": "C:/photos/approved/item2.jpg"}
+]
