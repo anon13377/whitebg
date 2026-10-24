@@ -1,0 +1,29 @@
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+# model weights are downloaded, never committed
+*.onnx
+*.onnx.part
+*.verified
+# local paths and private photos stay on your machine
+whitebg_local.json
+tests/golden_local.json
+selftest_runs/
+golden_runs/
+_cache/
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.npz
+# internal build notes (contain local paths)
+HANDOFF.md
+
+# P2 fixes 2026-10-24: publish the PWA icons and default model, keep verifier output private
+!web/icons/*.png
+!web/models/u2netp.onnx
+web/verify_p2/

@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whitebg"
+version = "0.1.0"
+description = "Pure white background product photos without losing any part of the item"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = ["numpy", "opencv-python-headless", "pillow", "scipy", "onnxruntime==1.20.1"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+whitebg = "whitebg.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+whitebg = ["models.json"]
