@@ -1,5 +1,5 @@
 // Offline cache. Bump VERSION when any shell file changes.
-const VERSION = 'whitebg-v1';
+const VERSION = 'whitebg-v2';
 const ORT = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
 const SHELL = ['./', 'index.html', 'app.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
