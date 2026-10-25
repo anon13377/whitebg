@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>White BG</title>
-<meta name="description" content="Put product photos on a pure white background, on your phone, offline.">
+<title>Lotshot: White Background for Listings</title>
+<meta name="description" content="Lotshot puts your item photos on a pure white background for eBay and marketplace listings. Free, on your phone, works offline.">
 <meta name="theme-color" content="#f4f5f2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0e1012" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="White BG">
+<meta name="apple-mobile-web-app-title" content="Lotshot">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -29,10 +29,9 @@ padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 
 main{width:100%;max-width:560px;margin:0 auto;flex:1;display:flex;flex-direction:column;gap:10px}
 header{display:flex;align-items:center;justify-content:space-between;min-height:36px}
 h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:8px}
-h1 i{width:22px;height:22px;border-radius:7px;background:var(--accent);display:inline-grid;place-items:center}
-h1 i::after{content:"";width:10px;height:10px;background:#fff;border-radius:3px}
+h1 .logo{width:30px;height:30px;flex:none;border-radius:8px}
 #count{font-size:13px;font-weight:600;color:var(--ink-2)}
-.stage{position:relative;width:100%;max-width:min(100%,40vh);max-width:min(100%,40dvh);margin:0 auto;aspect-ratio:1/1;border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow);
+.stage{position:relative;touch-action:none;width:100%;max-width:min(100%,40vh);max-width:min(100%,40dvh);margin:0 auto;aspect-ratio:1/1;border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow);
 overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;outline:none}
 .stage:focus-visible{box-shadow:0 0 0 3px var(--accent)}
 .stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
@@ -49,9 +48,13 @@ background-size:250% 100%;animation:shim 1.1s linear infinite}
 .stage.done.orig #srcimg{opacity:1}
 .stage.done #outimg{animation:pop .32s cubic-bezier(.2,.8,.2,1)}
 @keyframes pop{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
-#hint{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;padding:5px 9px;border-radius:999px}
+.stagebar{display:flex;justify-content:center;gap:12px;min-height:0}
+.stagebar:has(button:not([hidden])){min-height:44px}
+#hint{min-height:44px;min-width:44px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-size:15px;font-weight:600;padding:0 18px;border-radius:999px;cursor:pointer;box-shadow:var(--shadow)}
+#touch{min-height:44px;border:0;background:var(--accent);color:var(--accent-ink);font-family:inherit;font-size:15px;font-weight:700;padding:0 18px;border-radius:999px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#touch:focus-visible,#hint:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 
-#hint .b,.stage.orig #hint .a{display:none}.stage.orig #hint .b{display:inline}
+#hint .b,#hint[aria-pressed=true] .a{display:none}#hint[aria-pressed=true] .b{display:inline}
 #bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);transition:width .3s}
 #status{font-size:16px;color:var(--ink-2);min-height:22px;text-align:center}
 #status.alert{color:var(--danger);font-weight:600}
@@ -84,26 +87,58 @@ font-family:inherit;font-size:17px;font-weight:600;line-height:1.1;border:0;curs
 .links{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:4px}
 .link.danger{color:var(--danger)}
 input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+#editor{position:fixed;inset:0;z-index:50;background:#2a2d31;display:flex;flex-direction:column;
+padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));color:#fff}
+body.editing{overflow:hidden}
+.ebar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px}
+.ebar b{font-size:17px}
+.ebtn{min-height:44px;min-width:44px;border:0;border-radius:12px;padding:0 16px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}
+.ebtn.go{background:#34c27a;color:#06180e}
+.ebtn[aria-pressed=true]{background:#fff;color:#16181a}
+.ebtn:disabled{opacity:.35}
+.ebtn:focus-visible{outline:3px solid #34c27a;outline-offset:2px}
+#ewrap{position:relative;flex:1;overflow:hidden;touch-action:none;border-radius:12px;margin:6px 0;
+background:repeating-conic-gradient(#3a3e43 0 25%,#33363a 0 50%) 0 0/24px 24px}
+#ecan{position:absolute;left:0;top:0;transform-origin:0 0;image-rendering:auto}
+#ecan.flash{animation:eflash .35s ease-out}
+@keyframes eflash{from{filter:brightness(1.35)}to{filter:none}}
+#eov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#ehelp{font-size:15px;text-align:center;min-height:22px;color:#e4e7ea;margin:2px 0 6px}
+.etools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.erow{display:flex;gap:8px;justify-content:space-between;margin-top:8px}
+#esizes{display:flex;gap:8px}
+#esizes .ebtn{min-width:44px;padding:0}
+#eundo{min-width:72px}#edone{min-width:84px}
+#ehelp.warn{color:#ffb4b4;font-weight:700}
+@media (orientation:landscape) and (max-height:540px){
+#editor{display:grid;grid-template-columns:1fr 236px;grid-template-rows:auto auto 1fr auto;column-gap:10px}
+.ebar{grid-column:1/-1}#ewrap{grid-column:1;grid-row:2/5;margin:0}
+#ehelp{grid-column:2;grid-row:2;font-size:14px;margin:0 0 4px}
+.etools{grid-column:2;grid-row:3;align-self:start;grid-template-columns:1fr;gap:6px}
+.erow{grid-column:2;grid-row:4;margin-top:6px;flex-wrap:wrap;gap:6px}
+#esizes{order:-1;width:100%;justify-content:space-between}}
 [hidden]{display:none!important}
+@media (max-height:700px) and (orientation:portrait){.stage{max-width:min(100%,34vh);max-width:min(100%,34dvh)}main{gap:8px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
 .tile .spin{border-color:var(--accent)!important;opacity:.7}}
 @media (orientation:landscape) and (max-height:540px){
-main{max-width:980px;display:grid;grid-template-columns:auto minmax(300px,1fr);grid-template-rows:auto auto auto 1fr;column-gap:20px;row-gap:8px}
+main{max-width:980px;display:grid;grid-template-columns:auto minmax(300px,1fr);grid-template-rows:auto auto auto auto 1fr;column-gap:20px;row-gap:4px}
 header{grid-column:1/-1}
-.stage{grid-column:1;grid-row:2/5;max-width:none;width:auto;height:calc(100vh - 80px);height:calc(100dvh - 80px);margin:0}
-#status,#stripwrap,.dock{grid-column:2}
+.stage{grid-column:1;grid-row:2/6;max-width:none;width:auto;height:calc(100vh - 80px);height:calc(100dvh - 80px);margin:0}
+.stagebar,#status,#stripwrap,.dock{grid-column:2}
+.stagebar{justify-content:flex-start}
 .dock{margin-top:0;align-self:end;gap:6px}
 .btn{min-height:48px}.link{min-height:44px;padding:6px 10px}}
 </style>
 </head>
 <body>
-<main>
+<main id="app">
 <header>
-  <h1><i aria-hidden="true"></i>White BG</h1>
+  <h1><img class="logo" src="icons/icon-192.png" alt="">Lotshot</h1>
   <span id="count"></span>
 </header>
 
-<div id="stage" class="stage empty" tabindex="0" role="button" aria-pressed="false" aria-label="Photo preview. Press and hold, or hold Space, to see the original photo.">
+<div id="stage" class="stage empty" aria-label="Photo preview. Tap See before, or press and hold the photo, to see the original.">
   <div id="empty">
     <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
     <b>Your item, on pure white.</b>
@@ -111,10 +146,13 @@ header{grid-column:1/-1}
   </div>
   <img id="srcimg" alt="" hidden>
   <img id="outimg" alt="Your item on a white background" hidden>
-  <span id="hint" hidden><span class="a">Hold to see before</span><span class="b">Before</span></span>
   <div id="bar" hidden></div>
 </div>
 
+<div class="stagebar">
+  <button id="hint" type="button" aria-pressed="false" hidden><span class="a">See before</span><span class="b">See after</span></button>
+  <button id="touch" type="button" hidden>Touch up</button>
+</div>
 <div id="status" role="status" aria-live="polite"></div>
 
 <div id="stripwrap" hidden>
@@ -147,7 +185,31 @@ header{grid-column:1/-1}
   <button class="link" id="dl">Download copies instead</button>
 </div>
 </main>
+<div id="editor" role="dialog" aria-modal="true" aria-label="Touch up" hidden>
+  <div class="ebar">
+    <button class="ebtn" id="ecancel" type="button">Cancel</button>
+    <b>Touch up</b>
+    <button class="ebtn" id="efit" type="button">Fit</button>
+  </div>
+  <div id="ewrap" role="img" aria-label="Photo being touched up. Draw on it with one finger; pinch with two to zoom."><canvas id="ecan" width="1" height="1"></canvas><canvas id="eov"></canvas></div>
+  <div id="ehelp" role="status" aria-live="polite"></div>
+  <div class="etools" role="group" aria-label="Tool">
+    <button class="ebtn" id="t-circle" type="button" aria-pressed="true">Circle it</button>
+    <button class="ebtn" id="t-erase" type="button" aria-pressed="false">Erase</button>
+    <button class="ebtn" id="t-keep" type="button" aria-pressed="false">Keep</button>
+  </div>
+  <div class="erow">
+    <button class="ebtn" id="eundo" type="button" disabled>Undo</button>
+    <div id="esizes" role="group" aria-label="Brush size" hidden>
+      <button class="ebtn" id="sz-s" type="button" aria-pressed="false" aria-label="Small brush">S</button>
+      <button class="ebtn" id="sz-m" type="button" aria-pressed="true" aria-label="Medium brush">M</button>
+      <button class="ebtn" id="sz-l" type="button" aria-pressed="false" aria-label="Large brush">L</button>
+    </div>
+    <button class="ebtn go" id="edone" type="button">Done</button>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script src="app.js"></script>
+<script src="touchup.js"></script>
 </body>
 </html>

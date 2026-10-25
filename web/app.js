@@ -29,6 +29,22 @@ async function loadSession(name) {
 
 function canvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 
+// mask <-> grayscale PNG, so it lives as a blob off the JS heap and in IndexedDB
+function maskToPng(alpha, w, h) {
+  const c = canvas(w, h), ctx = c.getContext('2d'), im = ctx.createImageData(w, h);
+  for (let i = 0; i < alpha.length; i++) { const v = alpha[i]; im.data[i * 4] = im.data[i * 4 + 1] = im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 255; }
+  ctx.putImageData(im, 0, 0);
+  return new Promise(res => c.toBlob(b => { c.width = 0; res(b); }, 'image/png'));
+}
+async function pngToMask(blob, w, h) {
+  const c = canvas(w, h), ctx = c.getContext('2d');
+  ctx.drawImage(await loadImage(blob), 0, 0, w, h);
+  const d = ctx.getImageData(0, 0, w, h).data; c.width = 0;
+  const a = new Uint8Array(w * h);
+  for (let i = 0; i < a.length; i++) a[i] = d[i * 4];
+  return a;
+}
+
 // small copy of the original, for hold to compare
 function thumbOf(src, side = 1024) {
   const k = Math.min(1, side / Math.max(src.width, src.height));
@@ -122,16 +138,18 @@ async function processBlob(blob, name, maxSide) {
     out = compose(src, r.alpha);
   } catch (e) { src.width = 0; throw e; }
   const t2 = performance.now();
-  const jpeg = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.92));
+  const jpeg = await new Promise(res => out.toBlob(res, 'image/jpeg', 0.95));
   const thumb = await thumbOf(src);
+  const srcJpeg = await new Promise(res => src.toBlob(res, 'image/jpeg', 0.92));
+  const maskPng = await maskToPng(r.alpha, src.width, src.height);
   const t3 = performance.now();
   const outSide = out.width, itemShare = out.itemShare, width = src.width, height = src.height;
   src.width = 0; out.width = 0;   // free Safari canvas memory now
-  return {jpeg, thumb, itemShare, alpha: r.alpha, width, height, outSide,
+  return {jpeg, thumb, srcJpeg, maskPng, itemShare, alpha: r.alpha, width, height, outSide,
     timings: {decodeMs: t1 - t0, maskMs: t2 - t1, inferMs: r.inferMs, modelLoadMs: r.loadMs, modelFetchMs: r.fetchMs,
       composeEncodeMs: t3 - t2, totalMs: t3 - t0}, modelBytes: r.bytes};
 }
-window.whitebg = {processBlob, MODELS, getSession};
+window.whitebg = {processBlob, MODELS, getSession, compose, decode, pngToMask, maskToPng, canvas};
 
 // UI: a queue of photos, processed one after another in the order picked
 const $ = id => document.getElementById(id);
@@ -152,7 +170,7 @@ function store(fn) {
     const t = d.transaction('photos', 'readwrite'); fn(t.objectStore('photos')); t.oncomplete = t.onerror = ok;
   })).catch(() => {});
 }
-const keep = it => store(s => s.put({id: it.id, jpeg: it.jpeg, thumb: it.thumb, flag: it.flag}));
+const keep = it => store(s => s.put({id: it.id, jpeg: it.jpeg, thumb: it.thumb, flag: it.flag, src: it.src, mask: it.mask}));
 const drop = it => store(s => s.delete(it.id));
 function restore() {
   return db().then(d => new Promise(ok => {
@@ -161,14 +179,14 @@ function restore() {
   })).catch(() => []);
 }
 const items = [];
-let busy = false, active = null, picked = false, sharing = false, chunk = Infinity, saveFrom = 0, dlNext = 0, avgMs = 1500, ready = false, nextId = 0;
+let shownItem = null, busy = false, active = null, picked = false, sharing = false, chunk = Infinity, saveFrom = 0, dlNext = 0, avgMs = 1500, ready = false, nextId = 0;
 
 function say(text, alert) {
   const s = $('status'); s.textContent = text; s.className = alert ? 'alert' : '';
   s.setAttribute('aria-live', alert ? 'assertive' : 'polite');
 }
 const pad = n => String(n).padStart(2, '0');
-const fileOf = it => new File([it.jpeg], 'whitebg_' + pad(it.n) + '.jpg', {type: 'image/jpeg'});
+const fileOf = it => new File([it.jpeg], 'lotshot_' + pad(it.n) + '.jpg', {type: 'image/jpeg'});
 const doneItems = () => items.filter(it => it.state === 'done');
 const pending = () => items.filter(it => it.state === 'queued' || it.state === 'working').length;
 const LABEL = {queued: 'waiting', working: 'working', done: 'ready', error: 'needs a new photo'};
@@ -215,16 +233,17 @@ function render() {
 
 function show() {
   const it = active;
-  const held = stage.classList.contains('orig') && it && it.state === 'done';
+  if (it !== shownItem) { flipped = false; shownItem = it; }
+  const held = (stage.classList.contains('orig') || flipped) && it && it.state === 'done';
   stage.className = 'stage ' + (it ? it.state : 'empty') + (held ? ' orig' : '');
-  if (!held) stage.setAttribute('aria-pressed', 'false');
+  $('hint').setAttribute('aria-pressed', held ? 'true' : 'false');
   $('outimg').hidden = !(it && it.outUrl);
   $('srcimg').hidden = !(it && it.srcUrl);
   $('empty').hidden = !!it;
   if (it) $('outimg').alt = `Photo ${it.n} on a white background`;
   if (it && it.outUrl && $('outimg').getAttribute('src') !== it.outUrl) $('outimg').src = it.outUrl;
   if (it && it.srcUrl && $('srcimg').getAttribute('src') !== it.srcUrl) $('srcimg').src = it.srcUrl;
-  $('hint').hidden = !(it && it.state === 'done');
+  $('hint').hidden = $('touch').hidden = !(it && it.state === 'done');
   $('remove').disabled = !(it && it.state !== 'working');
   if (pending()) return;
   if (it && it.state === 'error') say(it.msg, true);
@@ -251,7 +270,7 @@ async function run() {
       const r = await whitebg.processBlob(it.file, 'u2netp');
       if (!items.includes(it)) continue;   // removed while it was working
       it.jpeg = r.jpeg; it.outUrl = URL.createObjectURL(r.jpeg);
-      URL.revokeObjectURL(it.srcUrl); it.thumb = r.thumb; it.srcUrl = URL.createObjectURL(r.thumb);
+      URL.revokeObjectURL(it.srcUrl); it.thumb = r.thumb; it.src = r.srcJpeg; it.mask = r.maskPng; it.srcUrl = URL.createObjectURL(r.thumb);
       it.flag = r.itemShare > 0.9 || r.itemShare < 0.02;
       it.state = 'done'; it.file = null; ready = true; keep(it);
       avgMs = avgMs * 0.6 + (performance.now() - t0) * 0.4;
@@ -273,6 +292,7 @@ async function run() {
 function forget(it) { drop(it); it.outUrl && URL.revokeObjectURL(it.outUrl); it.srcUrl && URL.revokeObjectURL(it.srcUrl); it.outUrl = it.srcUrl = null; }
 
 function clearAll() {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   items.forEach(forget); store(s => s.clear()); saveFrom = 0; chunk = Infinity; dlNext = 0; items.length = 0; active = null; picked = false;
   render(); show(); say(ready ? 'Ready. Take or upload a photo.' : 'Getting ready...');
 }
@@ -331,16 +351,26 @@ function flash(t) {
   setTimeout(() => { b.classList.remove('ok'); render(); }, 1200);
 }
 // press and hold the picture to see the original
+let flipped = false;   // Before shown by a tap on the button (stays until tapped again)
 const hold = on => {
-  const show = on && active && active.state === 'done';
+  const show = (on || flipped) && active && active.state === 'done';
   stage.classList.toggle('orig', !!show);
-  stage.setAttribute('aria-pressed', show ? 'true' : 'false');
+  $('hint').setAttribute('aria-pressed', show ? 'true' : 'false');
 };
-stage.addEventListener('pointerdown', () => { if (active && active.state === 'done') picked = true; hold(true); });
-['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => stage.addEventListener(ev, () => hold(false)));
+// iPhone: touch events with preventDefault, so Safari does not cancel the hold for its own long press
+stage.addEventListener('touchstart', e => {
+  if (e.target.closest('button') || !active || active.state !== 'done') return;
+  e.preventDefault(); picked = true; hold(true);
+}, {passive: false});
+['touchend', 'touchcancel'].forEach(ev => stage.addEventListener(ev, e => { if (!e.target.closest('button')) hold(false); }));
+// mouse on a computer
+stage.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' || e.target.closest('button')) return;
+  if (active && active.state === 'done') picked = true; hold(true);
+});
+['pointerup', 'pointerleave'].forEach(ev => stage.addEventListener(ev, e => { if (e.pointerType === 'mouse') hold(false); }));
 stage.addEventListener('contextmenu', e => e.preventDefault());
-stage.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); hold(true); } });
-stage.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') hold(false); });
+$('hint').addEventListener('click', e => { e.stopPropagation(); flipped = !flipped; picked = true; hold(false); });
 
 // back online: retry photos that failed only because the setup files did not download
 window.addEventListener('online', () => {
@@ -355,11 +385,19 @@ setTimeout(() => getSession('u2netp')
   .then(() => { ready = true; if (!items.length) say('Ready. Take or upload a photo.'); })
   .catch(() => { if (!items.length) say('Connect to the internet once to finish setup.', true); }), 50);
 render(); show();
+window.lotshot = {
+  get active() { return active; }, keep, render: () => { render(); show(); }, say,
+  setResult(it, jpeg, mask, itemShare) {
+    if (!items.includes(it)) return;   // removed while the editor was open
+    URL.revokeObjectURL(it.outUrl); it.jpeg = jpeg; it.mask = mask; it.outUrl = URL.createObjectURL(jpeg);
+    it.flag = itemShare > 0.9 || itemShare < 0.02; keep(it); render(); show();
+  },
+};
 restore().then(saved => {
   if (!saved.length || items.length) return;
   saved.sort((a, b) => a.id - b.id).forEach(p => {
     nextId = Math.max(nextId, p.id);
-    items.push({id: p.id, n: items.length + 1, state: 'done', jpeg: p.jpeg, thumb: p.thumb, flag: p.flag,
+    items.push({id: p.id, n: items.length + 1, state: 'done', jpeg: p.jpeg, thumb: p.thumb, flag: p.flag, src: p.src, mask: p.mask,
       outUrl: URL.createObjectURL(p.jpeg), srcUrl: URL.createObjectURL(p.thumb)});
   });
   active = items[items.length - 1]; ready = true; render(); show();

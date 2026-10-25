@@ -1,8 +1,8 @@
 // Offline cache. Bump VERSION when any shell file changes.
-const VERSION = 'whitebg-v5';
+const VERSION = 'whitebg-v8';
 const ORT = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
 // small files: all must arrive for the install to finish
-const SHELL = ['./', 'index.html', 'app.js', 'manifest.webmanifest',
+const SHELL = ['./', 'index.html', 'app.js', 'touchup.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png'];
 // big files: each cached on its own, so one dropped download on bad signal does not undo the rest
 const HEAVY = ['models/u2netp.onnx', ORT + 'ort.min.js', ORT + 'ort-wasm-simd-threaded.mjs', ORT + 'ort-wasm-simd-threaded.wasm'];
