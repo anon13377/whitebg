@@ -1,6 +1,6 @@
 {
-  "name": "whitebg",
-  "short_name": "whitebg",
+  "name": "White BG",
+  "short_name": "White BG",
   "description": "Product photos on a pure white background, on device.",
   "start_url": "./",
   "scope": "./",
@@ -9,6 +9,7 @@
   "theme_color": "#ffffff",
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }

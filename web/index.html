@@ -3,57 +3,148 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>whitebg</title>
+<title>White BG</title>
 <meta name="description" content="Put product photos on a pure white background, on your phone, offline.">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#f4f5f2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1012" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="whitebg">
+<meta name="apple-mobile-web-app-title" content="White BG">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
-:root{--bg:#f6f7f8;--fg:#1d2126;--muted:#5d6670;--accent:#1f8a4c;--card:#fff;--line:#dde1e5}
-@media (prefers-color-scheme: dark){:root{--bg:#15181b;--fg:#eef0f2;--muted:#a3abb3;--card:#1f2327;--line:#30363c}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 -apple-system,system-ui,Segoe UI,sans-serif;padding:16px;padding-top:max(16px,env(safe-area-inset-top))}
-main{max-width:640px;margin:0 auto}
-h1{font-size:22px;margin:0 0 4px}
-p.sub{color:var(--muted);margin:0 0 16px;font-size:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-label.btn,button{display:inline-block;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:600;cursor:pointer}
-button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-button:disabled{opacity:.45}
-input[type=file]{display:none}
-select{font-size:15px;padding:6px;border-radius:8px}
-#status{color:var(--muted);font-size:14px;min-height:20px;margin-top:10px;white-space:pre-line}
-img.out{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;display:block;margin-top:12px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.note{font-size:13px;color:var(--muted)}
+:root{--bg:#f4f5f2;--surface:#fff;--ink:#16181a;--ink-2:#5b6168;--line:rgba(22,24,26,.1);
+--accent:#18733f;--accent-ink:#fff;--accent-soft:#e3f2ea;--danger:#b4232a;
+--shadow:0 1px 2px rgba(0,0,0,.04),0 8px 24px rgba(0,0,0,.07);--r-lg:20px;--r-md:14px}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1012;--surface:#181b1e;--ink:#f2f3f4;--ink-2:#a3aab1;
+--line:rgba(255,255,255,.1);--accent:#34c27a;--accent-ink:#06180e;--accent-soft:#12291d;--danger:#ff7b7f;
+--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.4 -apple-system,"SF Pro Text",system-ui,"Segoe UI",sans-serif;
+min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{width:100%;max-width:560px;margin:0 auto;flex:1;display:flex;flex-direction:column;gap:10px}
+header{display:flex;align-items:center;justify-content:space-between;min-height:36px}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:8px}
+h1 i{width:22px;height:22px;border-radius:7px;background:var(--accent);display:inline-grid;place-items:center}
+h1 i::after{content:"";width:10px;height:10px;background:#fff;border-radius:3px}
+#count{font-size:13px;font-weight:600;color:var(--ink-2)}
+.stage{position:relative;width:100%;max-width:min(100%,40vh);max-width:min(100%,40dvh);margin:0 auto;aspect-ratio:1/1;border-radius:var(--r-lg);background:#fff;box-shadow:var(--shadow);
+overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;outline:none}
+.stage:focus-visible{box-shadow:0 0 0 3px var(--accent)}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.stage.empty{background:var(--surface);border:1.5px dashed var(--line);box-shadow:none}
+#empty{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:10px;text-align:center;padding:24px;color:var(--ink-2)}
+#empty b{color:var(--ink);font-size:19px;font-weight:600}
+#empty small{font-size:13px}
+#srcimg{background:#fff;transition:opacity .32s}
+.stage.working #srcimg{filter:saturate(.6) brightness(1.05)}
+.stage.working::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);
+background-size:250% 100%;animation:shim 1.1s linear infinite}
+@keyframes shim{from{background-position:120% 0}to{background-position:-120% 0}}
+.stage.done #srcimg{opacity:0}
+.stage.done.orig #srcimg{opacity:1}
+.stage.done #outimg{animation:pop .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes pop{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
+#hint{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;padding:5px 9px;border-radius:999px}
+
+#hint .b,.stage.orig #hint .a{display:none}.stage.orig #hint .b{display:inline}
+#bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);transition:width .3s}
+#status{font-size:16px;color:var(--ink-2);min-height:22px;text-align:center}
+#status.alert{color:var(--danger);font-weight:600}
+#stripwrap{display:flex;align-items:center;gap:8px}
+#strip{flex:1;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px;scrollbar-width:none}
+#strip::-webkit-scrollbar{display:none}
+.tile{flex:0 0 52px;height:52px;border-radius:12px;border:1px solid var(--line);background:#fff center/cover no-repeat;
+position:relative;scroll-snap-align:start;padding:0;animation:slide .22s ease-out}
+@keyframes slide{from{opacity:0;transform:translateX(12px)}}
+.tile.on{outline:3px solid var(--accent);outline-offset:1px}
+.tile.queued{opacity:.55}
+.tile .num{position:absolute;left:4px;bottom:4px;font-size:11px;font-weight:700;background:rgba(0,0,0,.55);color:#fff;border-radius:6px;padding:1px 5px}
+.tile .spin{position:absolute;inset:18px;border:3px solid rgba(0,0,0,.15);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.tile .bad{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:#b4232a;color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center}
+.dock{margin-top:auto;display:grid;gap:8px;padding-top:2px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;width:100%;border-radius:var(--r-md);
+font-family:inherit;font-size:17px;font-weight:600;line-height:1.1;border:0;cursor:pointer;text-align:center;padding:0 14px;transition:transform .12s cubic-bezier(.2,.8,.2,1),background .2s}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible,.tile:focus-visible,.link:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.dock:has(#cam:focus-visible) label[for=cam],.dock:has(#lib:focus-visible) label[for=lib],
+.dock:has(#cam2:focus-visible) label[for=cam2],.dock:has(#lib2:focus-visible) label[for=lib2]{outline:3px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.primary.ok{background:var(--accent);filter:brightness(1.1)}
+.secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow)}
+.btn:disabled{background:var(--line);color:var(--ink-2);box-shadow:none;border:0}
+.btn svg{width:22px;height:22px;flex:none}
+.link{background:none;border:0;color:var(--accent);font-family:inherit;font-size:15px;font-weight:600;padding:10px;min-height:44px;cursor:pointer}
+.links{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:4px}
+.link.danger{color:var(--danger)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
+.tile .spin{border-color:var(--accent)!important;opacity:.7}}
+@media (orientation:landscape) and (max-height:540px){
+main{max-width:980px;display:grid;grid-template-columns:auto minmax(300px,1fr);grid-template-rows:auto auto auto 1fr;column-gap:20px;row-gap:8px}
+header{grid-column:1/-1}
+.stage{grid-column:1;grid-row:2/5;max-width:none;width:auto;height:calc(100vh - 80px);height:calc(100dvh - 80px);margin:0}
+#status,#stripwrap,.dock{grid-column:2}
+.dock{margin-top:0;align-self:end;gap:6px}
+.btn{min-height:48px}.link{min-height:44px;padding:6px 10px}}
 </style>
 </head>
 <body>
 <main>
-<h1>whitebg</h1>
-<p class="sub">Product photo to pure white background. Runs on your device; nothing is uploaded.</p>
-<div class="card">
-  <div class="row">
-    <label class="btn" for="pick">Take or pick a photo</label>
-    <input id="pick" type="file" accept="image/*" capture="environment">
-    <select id="model" aria-label="Model">
-      <option value="u2netp">Fast (u2netp, 4.6 MB)</option>
-    </select>
+<header>
+  <h1><i aria-hidden="true"></i>White BG</h1>
+  <span id="count"></span>
+</header>
+
+<div id="stage" class="stage empty" tabindex="0" role="button" aria-pressed="false" aria-label="Photo preview. Press and hold, or hold Space, to see the original photo.">
+  <div id="empty">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    <b>Your item, on pure white.</b>
+    <small>Stays on your phone. Nothing is uploaded.</small>
   </div>
-  <div id="status">Ready.</div>
+  <img id="srcimg" alt="" hidden>
+  <img id="outimg" alt="Your item on a white background" hidden>
+  <span id="hint" hidden><span class="a">Hold to see before</span><span class="b">Before</span></span>
+  <div id="bar" hidden></div>
 </div>
-<div class="card" id="result" hidden>
-  <img class="out" id="outimg" alt="Result on white">
-  <div class="row" style="margin-top:12px">
-    <button id="share">Share / Save to Photos</button>
-    <button class="ghost" id="dl">Download JPEG</button>
+
+<div id="status" role="status" aria-live="polite"></div>
+
+<div id="stripwrap" hidden>
+  <div id="strip" role="group" aria-label="Your photos"></div>
+</div>
+
+<div class="dock" id="pickdock">
+  <div class="two">
+    <label class="btn primary" for="cam">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Take photo</label>
+    <label class="btn secondary" for="lib">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>Upload photos</label>
   </div>
-  <p class="note">Phone quality is lower than the desktop app. Check edges before listing.</p>
+  <input id="cam" type="file" accept="image/*" capture="environment">
+  <input id="lib" type="file" accept="image/*" multiple>
+</div>
+
+<div class="dock" id="resultdock" hidden>
+  <div class="links">
+    <button class="link danger" id="remove">Remove this photo</button>
+    <button class="link danger" id="clear">Start over</button>
+  </div>
+  <div class="two">
+    <label class="btn secondary" for="cam2">+ Take photo</label>
+    <label class="btn secondary" for="lib2">+ Upload more</label>
+  </div>
+  <input id="cam2" type="file" accept="image/*" capture="environment">
+  <input id="lib2" type="file" accept="image/*" multiple>
+  <button class="btn primary" id="saveall" disabled>Save to Photos</button>
+  <button class="link" id="dl">Download copies instead</button>
 </div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
